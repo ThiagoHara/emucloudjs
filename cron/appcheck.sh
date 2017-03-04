@@ -1,0 +1,1 @@
+ansible-playbook -l nodes //etc//ansible//app_check.yml >> /vagrant/cron/appcheck.log

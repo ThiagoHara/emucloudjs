@@ -1,0 +1,15 @@
+---
+- hosts: nodes
+  become: True  
+  tasks: 
+  - name: test connection
+    ping: 
+  - name: App
+    docker:
+      name: App
+      image: thiagohara/chaordic-desafio2:latest
+      #pull: always
+      state: reloaded
+      restart_policy: always
+      ports: 
+        - "3000:3000"   

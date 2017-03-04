@@ -1,0 +1,92 @@
+---
+- hosts: all
+  become: True  
+  gather_facts: False
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+- hosts: nodes
+  become: True  
+  tasks: 
+  - name: Install the package python-pip
+    apt:
+      name: python-pip
+      state: present
+  - name: Install the package docker.io
+    apt:
+      name: docker.io
+      state: present
+  - pip: name=docker-py
+  - name: Install app HelloWorld
+    docker_container:
+      name: HelloWorld
+      image: thiagohara/chaordic-desafio2:latest
+      state: started
+      restart_policy: always
+      ports: 
+        - "3000:3000"
+  - name: Install influxdb 
+    docker_container:
+      name: InfluxSrv
+      image: tutum/influxdb:latest
+      state: started
+      restart_policy: always
+      ports: 
+        - "8083:8083"
+        - "8086:8086"
+      exposed_ports:
+        - "8090"
+        - "8099"
+      env: 
+        PRE_CREATE_DB=cadvisor
+- hosts: nodes
+  become: True  
+  roles:  
+  - role: wangsha.docker-cadvisor
+- hosts: controller
+  remote_user: ubuntu 
+  become: yes
+  tasks: 
+    - name: Install the package openssh-server
+      apt:
+        name: openssh-server
+        state: present
+    - name: Install the package libssl-dev
+      apt:
+        name: libssl-dev
+        state: present  
+    - name: Set Monitoramento
+      cron: name="Set Monitoramento"
+            job="sh /vagrant/cron/appcheck.sh"
+            cron_file=app_check
+            user=ubuntu
+    - name: Set Backup de log do nginx
+      cron: name="Set Backup de log do nginx",
+            minute=0
+            hour=0
+            job="sh /vagrant/cron/sendreport.sh"
+            cron_file=sendreport
+            user=ubuntu
+- hosts: lb
+  remote_user: ubuntu 
+  become: yes
+  vars:
+    nginx_vhosts:
+    - extra_parameters: |
+        location /{
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Fowarded-For $proxy_add_x_forwarded_for;
+          proxy_pass http://app;          
+        }
+    nginx_upstreams: 
+    - name: app
+      strategy: "ip_hash"
+      servers: {
+        "172.17.177.21:3000 max_fails=1 fail_timeout=10s",
+        "172.17.177.22:3000 max_fails=1 fail_timeout=10s"
+      } 
+  tasks:
+    - file: path=/etc/nginx/sites-enabled/default state=absent    
+  roles:    
+    - geerlingguy.nginx

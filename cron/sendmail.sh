@@ -1,0 +1,1 @@
+ansible-playbook //etc//ansible//sendreport.yml >> /vagrant/cron/sendreport.log

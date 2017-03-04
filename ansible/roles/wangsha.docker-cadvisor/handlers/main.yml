@@ -1,0 +1,19 @@
+- name: restart cadvisor
+  become: true
+  docker:
+    docker_api_version: "{{ docker_api_version }}"
+    env: "{{ docker_cadvisor_env }}"
+    expose: "{{ docker_cadvisor_expose }}"
+    image: "{{ docker_cadvisor_image }}"
+    name: "{{ docker_cadvisor_name }}"
+    ports: "{{ docker_cadvisor_ports }}"
+    links: "{{ docker_cadvisor_links }}"
+    volumes: "{{ docker_cadvisor_volumes }}"
+    command: "{{ docker_cadvisor_command }}"
+    memory_limit: "{{ docker_cadvisor_memory_limit }}"
+    log_driver: "{{ docker_cadvisor_log_driver }}"
+    log_opt: "{{ docker_cadvisor_log_opt }}"
+    restart_policy: always
+    state: restarted
+  tags:
+    - restart

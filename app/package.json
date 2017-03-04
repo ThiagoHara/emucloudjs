@@ -1,0 +1,14 @@
+{
+  "name": "helloworld",
+  "version": "1.0.0",
+  "description": "Cluster deploy ",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "Thiago Hara",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.14.0"
+  }
+}

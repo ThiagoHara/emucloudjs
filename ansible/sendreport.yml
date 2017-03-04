@@ -1,0 +1,24 @@
+---
+- hosts: controller
+  connection: local
+  vars:
+     contents: "{{ lookup('file', '/vagrant/parser_log/access_parse_{{ ansible_date_time.date }}.log') }}"
+     data: "{{ ansible_date_time.date }}"
+  tasks: 
+    - name: Pega os arquivos do servidor nginx
+      shell: scp -i /vagrant/.vagrant/machines/lb/virtualbox/private_key ubuntu@172.17.177.20:/var/log/nginx/access.log /vagrant/parser_log/access_{{ data }}.log
+    - name: Parser do log 
+      shell: awk '{print $9 " "$7}' /vagrant/parser_log/access_{{ data }}.log | sort | uniq -c | sort -rn > /vagrant/parser_log/access_parse_{{ data }}.log
+    - name: Compress log 
+      shell: tar -czvf /vagrant/parser_log/access_$(date +%Y-%m-%d).tar.gz /vagrant/parser_log/access_$(date +%Y-%m-%d).log 
+    - name: Remove log
+      shell: rm /vagrant/parser_log/access_{{ data }}.log  
+    - name: send email 
+      local_action: mail
+                    host='smtp.gmail.com'
+                    port=587
+                    username=usuario@gmail.com
+                    password='senha'
+                    to="Fulano de tal <usuario@gmail.com>"
+                    subject='Ansible-report project Chaordic'
+                    body='{{ contents }}'

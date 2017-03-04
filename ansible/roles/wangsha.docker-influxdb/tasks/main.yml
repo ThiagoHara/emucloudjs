@@ -1,0 +1,64 @@
+- name: Ensure docke volume mapping host directories exist
+  file:
+    state: directory
+    path: "{{ item | regex_replace('^(?P<host>.+):(?P<container>.+):(?P<mode>.+)', '\\g<host>') }}"
+  with_items:
+    - "{{ docker_influxdb_directory_volumes }}"
+  tags:
+    - install
+    - upgrade
+
+
+- name: Ensure docker volume mapping host file directories exist
+  file:
+    state: directory
+    path: "{{ item | regex_replace('^(?P<host>.+):(?P<container>.+):(?P<mode>.+)', '\\g<host>') | dirname }}"
+  with_items:
+    - "{{ docker_influxdb_file_volumes }}"
+  tags:
+    - install
+    - upgrade
+
+
+- name: Copy docker volume mapping host file
+  template:
+    src="{{ docker_influxdb_template_path }}{{ item | regex_replace('^(?P<host>.+):(?P<container>.+):(?P<mode>.+)', '\\g<host>') | basename }}.j2"
+    dest="{{ item | regex_replace('^(?P<host>.+):(?P<container>.+):(?P<mode>.+)', '\\g<host>') }}"
+    mode='0644'
+  with_items:
+    - "{{ docker_influxdb_file_volumes }}"
+  tags:
+    - install
+    - upgrade
+
+
+- name: Remove existing {{ docker_influxdb_name }} container
+  docker:
+    docker_api_version: "{{ docker_api_version }}"
+    image: "{{ docker_influxdb_image }}"
+    name: "{{ docker_influxdb_name }}"
+    state: absent
+  tags:
+    - install
+    - upgrade
+
+
+- name: Run docker influxdb container
+  docker:
+    docker_api_version: "{{ docker_api_version }}"
+    env: "{{ docker_influxdb_env }}"
+    expose: "{{ docker_influxdb_expose }}"
+    image: "{{ docker_influxdb_image }}"
+    name: "{{ docker_influxdb_name }}"
+    ports: "{{ docker_influxdb_ports }}"
+    links: "{{ docker_influxdb_links }}"
+    volumes: "{{ docker_influxdb_volumes }}"
+    memory_limit: "{{ docker_influxdb_memory_limit }}"
+    log_driver: "{{ docker_influxdb_log_driver }}"
+    log_opt: "{{ docker_influxdb_log_opt }}"
+    pull: always
+    restart_policy: always
+    state: reloaded
+  tags:
+    - install
+    - upgrade

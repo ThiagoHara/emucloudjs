@@ -1,0 +1,16 @@
+---
+
+- name: Installing packages
+  apt:
+    pkg: "{{ item }}"
+    state: present
+  with_items: htpasswd_packages
+
+- name: Creating htpasswd folder
+  file:
+    dest: "{{ htpasswd_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: not((htpasswd_path is undefined) or (htpasswd_path is none) or (htpasswd_path|trim == ''))
